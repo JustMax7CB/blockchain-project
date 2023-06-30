@@ -40,7 +40,7 @@ contract BiddingContract is ChainlinkClient {
         address _bidder2,
         string memory _bidder1ResultGuess, // result format: "2-1"
         string memory _bidder2ResultGuess, // result format: "3-5"
-        uint256 memory _bidAmount,
+        uint256 memory _bidAmount
     ) public {
         require(currentBid.resolved, "A bid is already open.");
         require(_bidder2 != address(0), "Invalid bidder address.");
@@ -84,7 +84,6 @@ contract BiddingContract is ChainlinkClient {
             this.handleMatchData.selector
         );
         request.add("get", "https://api.football-data.org/v4/matches"); // Set the Football-Data.org API endpoint for retrieving match data
-        request.add("path", "YOUR_JSON_PATH"); // Set the actual JSON path for retrieving the match data
         request.add(
             "headers",
             "X-Auth-Token: 8b752b2a04694a799db1fdf1b9bca649"
