@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.19;
+pragma solidity >=0.6.6 <0.9.0;
+pragma experimental ABIEncoderV2;
 
-import "../node_modules/@chainlink/contracts";
+import "../node_modules/@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 
 contract BiddingContract is ChainlinkClient {
     using Chainlink for Chainlink.Request;
@@ -40,7 +41,7 @@ contract BiddingContract is ChainlinkClient {
         address _bidder2,
         string memory _bidder1ResultGuess, // result format: "2-1"
         string memory _bidder2ResultGuess, // result format: "3-5"
-        uint256 memory _bidAmount
+        uint256  _bidAmount
     ) public {
         require(currentBid.resolved, "A bid is already open.");
         require(_bidder2 != address(0), "Invalid bidder address.");
@@ -74,20 +75,20 @@ contract BiddingContract is ChainlinkClient {
         require(!currentBid.resolved, "No open bid available.");
         require(msg.sender == contractOwner, "Only the contract owner can resolve the bid.");
 
-        requestMatchData();
+        // requestMatchData();
     }
 
-    function requestMatchData() private {
-        Chainlink.Request memory request = buildChainlinkRequest(
-            jobId,
-            address(this),
-            this.handleMatchData.selector
-        );
-        request.add("get", "https://api.football-data.org/v4/matches"); // Set the Football-Data.org API endpoint for retrieving match data
-        request.add(
-            "headers",
-            "X-Auth-Token: 8b752b2a04694a799db1fdf1b9bca649"
-        ); // Set the actual auth token
-        sendChainlinkRequestTo(oracle, request, fee);
-    }
+    // function requestMatchData() private {
+    //     Chainlink.Request memory request = buildChainlinkRequest(
+    //         jobId,
+    //         address(this),
+    //         this.handleMatchData.selector
+    //     );
+    //     request.add("get", "https://api.football-data.org/v4/matches"); // Set the Football-Data.org API endpoint for retrieving match data
+    //     request.add(
+    //         "headers",
+    //         "X-Auth-Token: 8b752b2a04694a799db1fdf1b9bca649"
+    //     ); // Set the actual auth token
+    //     sendChainlinkRequestTo(oracle, request, fee);
+    // }
 }

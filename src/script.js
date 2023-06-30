@@ -1,23 +1,32 @@
-const Web3 = require("web3");
-
 // Contract ABI (Application Binary Interface) obtained from compiling the Solidity file
-const contractABI = [
-  // Contract ABI here
-];
 
-// // Address of the deployed contract
-// const contractAddress = 'YOUR_CONTRACT_ADDRESS'; // Replace with the actual contract address
+const ABI_JsonFilePath = "../build/contracts/BiddingContract.json";
 
 // Ethereum provider URL
-const providerUrl = "http://localhost:5500"; // Replace with your actual Ethereum provider URL
+const providerUrl = "http://127.0.0.1:7545"; // Replace with your actual Ethereum provider URL
+
+const web3 = new Web3(providerUrl);
+log("Web3 Instance", web3.currentProvider);
+
+const reader = new FileReader();
+let contractABI = fetch(ABI_JsonFilePath).then((response) =>
+  response.json()
+    .then((data) => (contractABI = data.abi))
+);
+log("ABI JSON DATA", await contractABI);
+
+
 
 // Create a new instance of the Web3 class
-const contractAddress = Web3.providers.providerUrl
-console.log(contractAddress)
+const contractAddress = "0x5Ab94c45A9b8a37154e356584e588d1dDc7ae782"; // Replace with the actual contract address
+log("CONTRACT ADDRESS", contractAddress);
+
+const contract = new web3.eth.Contract(contractABI, contractAddress);
+log("Contract Instance", contract);
+
+
 
 // Create a contract instance using the ABI and contract address
-const contract = Web3.eth.contract.Contract
-console.log(contract)
 // Function to open a bid
 async function openBid(
   team1,
@@ -28,8 +37,6 @@ async function openBid(
   bidAmount
 ) {
   try {
-    const accounts = await Web3.eth.getAccounts();
-    const contractOwner = accounts[0]; // Assuming the contract owner is the first account
     await contract.methods
       .openBid(
         team1,
@@ -80,7 +87,7 @@ async function main() {
   await openBid(
     "Team A",
     "Team B",
-    "0x1234567890abcdef1234567890abcdef12345678",
+    "0xb6e6571b503D9C77C0C3936D41bd9007F9EC2185",
     "2-1",
     "3-5",
     100
@@ -94,3 +101,7 @@ async function main() {
 }
 
 main().catch(console.error);
+
+function log(tag, message) {
+  console.log("[" + tag + "]", message);
+}

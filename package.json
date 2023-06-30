@@ -2,6 +2,8 @@
   "dependencies": {
     "@chainlink/contracts": "^0.6.1",
     "@openzeppelin/contracts": "^4.8.3",
+    "fs": "^0.0.1-security",
+    "jsonfile": "^6.1.0",
     "web3": "latest"
   }
 }
