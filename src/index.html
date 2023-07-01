@@ -10,11 +10,46 @@
     <h1>Smart Contract Test</h1>
 
     <div class="main-container">
-      <input type="text" placeholder="Contact Address" id="contact-address"/>
-      <button id="button" type="submit" class="btn btn-primary">Submit</button>
+      <input type="text" autocomplete="name" name="team_a" id="team_a" placeholder="First Team" />
+      <input type="text" autocomplete="name" name="team_b" id="team_b" placeholder="Second Team" />
+      <input
+        type="text"
+        name="firstBidderGuess"
+        id="first-guess"
+        placeholder="Bidder 1 Guess"
+      />
+      <input
+        type="text"
+        name="firstBidderGuess"
+        id="second-guess"
+        placeholder="Bidder 2 Guess"
+      />
+      <input
+        type="text"
+        placeholder="Second Bidder Address"
+        id="second-bidder"
+      />
+      <input type="number" placeholder="Bid Amount" id="bid-amount" />
+      <div class="btns">
+        <button id="open-Bid" type="button" class="btn btn-primary">
+          Open Bid
+        </button>
+        <button id="place-Bid" type="button" class="btn btn-primary">
+          Place Bid
+        </button>
+        <button id="resolve-Bid" type="button" class="btn btn-primary">
+          Resolve Bid
+        </button>
+      </div>
+    </div>
+
+    <div class="web3">
+      <h2>Account: <span class="showAccount"></span></h2>
+      <h2>Chain ID: <span class="showChainId"></span></h2>
     </div>
 
     <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.0.0-beta.36/dist/web3.min.js"></script>
+    <script type="module" src="./web3_script.js"></script>
     <script type="module" src="./script.js"></script>
   </body>
 </html>
