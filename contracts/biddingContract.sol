@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+
 pragma solidity >=0.6.6 <0.9.0;
 pragma experimental ABIEncoderV2;
 
@@ -54,7 +54,7 @@ contract BiddingContract is ChainlinkClient {
         string memory _bidder1ResultGuess, // result format: "2-1"
         string memory _bidder2ResultGuess, // result format: "3-5"
         uint256 _bidAmount
-    ) public {
+    ) public payable{
         // require(currentBid.resolved, "A bid is already open.");
         require(_bidder2 != address(0), "Invalid bidder address.");
 
@@ -72,25 +72,26 @@ contract BiddingContract is ChainlinkClient {
         });
     }
 
-    function placeBid() public payable {
+    function placeBid() public {
         // require(
         //     msg.sender != currentBid.bidder1,
         //     "You cannot outbid yourself."
         // );
 
-        // Return funds to previous bidder
-        payable(currentBid.bidder2).transfer(currentBid.bidAmount);
+        
 
         // Update bidder
         currentBid.bidder2 = msg.sender;
     }
 
-    function resolveBid() public {
+    function resolveBid() public payable {
         require(!currentBid.resolved, "No open bid available.");
         require(
             msg.sender == contractOwner,
             "Only the contract owner can resolve the bid."
         );
+        // Return funds to previous bidder
+        payable(currentBid.bidder2).transfer(currentBid.bidAmount);
 
         // requestMatchData();
     }

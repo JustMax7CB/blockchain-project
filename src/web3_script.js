@@ -51,8 +51,8 @@ export async function openBid(
   bidAmount
 ) {
   try {
-    getAccount();
-    getChainId();
+    await getAccount();
+    await getChainId();
 
     log("FUNCTION CALL", "openBid");
     await contract.methods
@@ -65,8 +65,8 @@ export async function openBid(
         bidAmount
       )
       .send({
-        from: web3.utils.toChecksumAddress(activeAccount),
-        gas: "10000",
+        from: activeAccount,
+        gas: "100000",
       });
     console.log("Bid opened successfully.");
   } catch (error) {
@@ -90,7 +90,7 @@ export async function placeBid() {
 // Function to resolve a bid
 export async function resolveBid() {
   try {
-    getAccount();
+    await getAccount();
     getChainId();
     log("FUNCTION CALL", "resolveBid");
     await contract.methods.resolveBid().send({ from: activeAccount });
@@ -107,9 +107,7 @@ function connectToMetaMask() {
   }
   if (ethereum) {
     ethereum.request({ method: "eth_requestAccounts" }).then((address) => {
-      log("ETHEREUM ACCOUNT", "Account Connected" + address[0]).catch((err) => {
-        console.error("User denied account access");
-      });
+      log("ETHEREUM ACCOUNT", "Account Connected" + address[0]);
     });
   }
 }
@@ -139,7 +137,7 @@ async function getAccount() {
     activeAccount = accounts[0];
   }
   showAccount.innerHTML = activeAccount;
-  log("CONTRACT OWNER", activeAccount);
+  log("Second Bidder Address: ", activeAccount);
 }
 
 // Get the connected network chainId
