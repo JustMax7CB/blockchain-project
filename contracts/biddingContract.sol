@@ -72,49 +72,88 @@ contract BiddingContract is ChainlinkClient {
 
     function openBid(
         string memory _matchId,
-        address _bidder2,
-        string memory _bidder1ResultGuess, // result format: "2-1"
-        string memory _bidder2ResultGuess, // result format: "3-5"
+        address _bidder1,
+        string memory _bidder1Guess,
         uint256 _bidAmount
     ) public {
-        // require(currentBid.resolved, "A bid is already open.");
-        require(_bidder2 != address(0), "Invalid bidder address.");
-
         currentBid = Bid({
             matchId: _matchId,
-            bidder1: msg.sender,
-            bidder2: _bidder2,
-            bidder1ResultGuess: _bidder1ResultGuess,
-            bidder2ResultGuess: _bidder2ResultGuess,
+            bidder1: _bidder1,
+            bidder2: address(0),
+            bidder1ResultGuess: _bidder1Guess,
+            bidder2ResultGuess: "",
+            bidAmount: _bidAmount,
             result1: 0,
             result2: 0,
-            bidAmount: _bidAmount,
             resolved: false
         });
     }
 
-    function placeBid() public payable {
-        require(!currentBid.resolved, "No open bid available.");
+    function placeBid(address _bidder2, string memory _bidder2Guess) public {
         require(
-            msg.sender != currentBid.bidder2,
+            msg.sender != currentBid.bidder1,
             "You cannot outbid yourself."
         );
-        
+
+        currentBid = Bid({
+            matchId: currentBid.matchId,
+            bidder1: currentBid.bidder1,
+            bidder2: _bidder2,
+            bidder1ResultGuess: currentBid.bidder1ResultGuess,
+            bidder2ResultGuess: _bidder2Guess,
+            bidAmount: currentBid.bidAmount,
+            result1: 0,
+            result2: 0,
+            resolved: false
+        });
+
         storeBid(currentBid);
     }
 
-    function resolveBid() public payable {
-        require(!currentBid.resolved, "No open bid available.");
-        require(
-            msg.sender == contractOwner,
-            "Only the contract owner can resolve the bid."
-        );
-        // Return funds to previous bidder
-        payable(currentBid.bidder2).transfer(currentBid.bidAmount);
-  
-        // requestMatchData();
-    }
+    // function openBid(
+    //     string memory _matchId,
+    //     address _bidder2,
+    //     string memory _bidder1ResultGuess, // result format: "2-1"
+    //     string memory _bidder2ResultGuess, // result format: "3-5"
+    //     uint256 _bidAmount
+    // ) public {
+    //     // require(currentBid.resolved, "A bid is already open.");
+    //     require(_bidder2 != address(0), "Invalid bidder address.");
 
+    //     currentBid = Bid({
+    //         matchId: _matchId,
+    //         bidder1: msg.sender,
+    //         bidder2: _bidder2,
+    //         bidder1ResultGuess: _bidder1ResultGuess,
+    //         bidder2ResultGuess: _bidder2ResultGuess,
+    //         result1: 0,
+    //         result2: 0,
+    //         bidAmount: _bidAmount,
+    //         resolved: false
+    //     });
+    // }
+
+    // function placeBid() public payable {
+    //     require(!currentBid.resolved, "No open bid available.");
+    //     require(
+    //         msg.sender != currentBid.bidder2,
+    //         "You cannot outbid yourself."
+    //     );
+
+    //     storeBid(currentBid);
+    // }
+
+    // function resolveBid() public payable {
+    //     require(!currentBid.resolved, "No open bid available.");
+    //     require(
+    //         msg.sender == contractOwner,
+    //         "Only the contract owner can resolve the bid."
+    //     );
+    //     // Return funds to previous bidder
+    //     payable(currentBid.bidder2).transfer(currentBid.bidAmount);
+
+    //     // requestMatchData();
+    // }
 
     // function requestMatchData() private {
     //     currentBid.resolved = true;

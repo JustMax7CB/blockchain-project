@@ -28,7 +28,7 @@ let contractABI = fetch(ABI_JsonFilePath).then((response) =>
 log("ABI JSON DATA", await contractABI);
 
 // Create a new instance of the Web3 class
-const contractAddress = "0x1Fb15Eeb7D71CeCCebD8A454028D85Cab93eD202"; // Replace with the actual contract address
+const contractAddress = "0x8799e1F05912fc59c500BB2ab49dD383541fBfbE"; // Replace with the actual contract address
 log("CONTRACT ADDRESS", contractAddress);
 
 export let contract = new web3.eth.Contract(contractABI, contractAddress);
@@ -45,47 +45,35 @@ export async function resolvedBid() {
 
 // Create a contract instance using the ABI and contract address
 // Function to open a bid
-export async function openBid(
-  matchId,
-  bidder2,
-  bidder1ResultGuess,
-  bidder2ResultGuess,
-  bidAmount
-) {
+
+export async function openBid(matchId, bidder1Guess, bidAmount) {
   try {
     await window.ethereum.on("accountsChanged", function (accounts) {
       activeAccount = et_ActiveAccount;
       console.log(activeAccount);
     });
-
     log("FUNCTION CALL START", "openBid");
-
     await contract.methods
-      .openBid(
-        matchId,
-        bidder2,
-        bidder1ResultGuess,
-        bidder2ResultGuess,
-        bidAmount
-      )
+      .openBid(matchId, et_ActiveAccount, bidder1Guess, bidAmount)
       .send({ from: et_ActiveAccount, gas: 300000 });
-    console.log("Bid opened successfully.");
+
+    log("openBid", "Bid opened successfully.");
   } catch (error) {
     console.error("Error opening bid:", error);
   }
-  log("FUNCTION CALL ENDED", "openBid");
+
+  log("FUNCTION CALL END", "openBid");
 }
 
 // Function to place a bid
-export async function placeBid(bidAmount) {
+export async function placeBid(bidder2, bidder2Guess) {
   try {
     log("FUNCTION CALL START", "placeBid");
     await contract.methods
-      .placeBid()
+      .placeBid(bidder2, bidder2Guess)
       .send({ from: et_ActiveAccount, gas: 300000, value: bidAmount });
 
-    console.log("Bid placed successfully.");
-    log("All Bids", await getAllBids());
+    log("placeBid", "Bid placed successfully.");
   } catch (error) {
     console.error("Error placing bid:", error);
   }
@@ -158,7 +146,6 @@ async function main() {
   console.log("Connected to Ethereum provider.");
 
   connectToMetaMask();
-  log("All Bids", await getAllBids());
 }
 
 main().catch(console.error);
