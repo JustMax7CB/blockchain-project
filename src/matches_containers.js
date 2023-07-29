@@ -51,8 +51,8 @@ function displayData(data) {
             <div class="form-inputs" id="match_id_${match.id}">
                 <input class="form-control" type="text" placeholder="הזינו סכום הימור כאן">
                 <select class="form-select">
-                <option value="${match["homeTeam"].shortName}">${match["homeTeam"].shortName}</option>
-                <option value="${match["awayTeam"].shortName}">${match["awayTeam"].shortName}</option>
+                <option value="HOME_TEAM">${match["homeTeam"].shortName}</option>
+                <option value="AWAY_TEAM">${match["awayTeam"].shortName}</option>
                 </select>
                 <button id="openBidBtn" class="btn btn-success" data-match-id="${match.id}">Open Bid</button>
             </div>

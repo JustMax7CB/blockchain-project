@@ -27,6 +27,7 @@ contract BiddingContract is ChainlinkClient {
     Bid[] public bids;
 
     struct Bid {
+        uint256 index;
         string matchId;
         address payable bidder1;
         address payable bidder2;
@@ -35,7 +36,7 @@ contract BiddingContract is ChainlinkClient {
         uint result1;
         uint result2;
         uint256 bidAmount;
-        bool resolved;
+        bool isBidder1Won;
     }
 
     Bid public currentBid;
@@ -88,11 +89,11 @@ contract BiddingContract is ChainlinkClient {
     }
 
     function resolvedBid() public {
-        currentBid.resolved = true;
+        currentBid.isBidder1Won = true;
     }
 
     function getResolvedStatus() public view returns (bool) {
-        return currentBid.resolved;
+        return currentBid.isBidder1Won;
     }
 
     function getBidder1Guess() public view returns (string memory) {
@@ -106,6 +107,7 @@ contract BiddingContract is ChainlinkClient {
         uint256 _bidAmount
     ) public {
         currentBid = Bid({
+            index: arrayIndex++,
             matchId: _matchId,
             bidder1: _bidder1,
             bidder2: currentBid.bidder2,
@@ -114,22 +116,26 @@ contract BiddingContract is ChainlinkClient {
             bidAmount: _bidAmount,
             result1: 0,
             result2: 0,
-            resolved: false
+            isBidder1Won: false
         });
         storeBid(currentBid);
     }
 
-    function placeBid(string memory _bidder2Guess) public {
+    function placeBid(string memory _bidder2Guess, uint256 index) public {
         // require(
         //     msg.sender != currentBid.bidder1,
         //     "You cannot outbid yourself."
         // );
         currentBid.bidder2 = payable(msg.sender);
         currentBid.bidder2ResultGuess = _bidder2Guess;
+        setBidder2InArray(payable(msg.sender), index);
+    }
+
+    function setBidder2InArray(address payable bidder2, uint256 index) public {
+        bids[index].bidder2 = bidder2;
     }
 
     function resolveBid() public payable {
-        require(!currentBid.resolved, "No open bid available.");
         require(
             msg.sender == contractOwner,
             "Only the contract owner can resolve the bid."

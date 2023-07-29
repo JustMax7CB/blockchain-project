@@ -28,7 +28,8 @@ function handleOpenButtonClick(event) {
 function handlePlaceButtonClick(event) {
   const secondTeam = event.target.dataset.secondTeam;
   const bidAmount = event.target.dataset.bidAmount;
-  placeNewBid(secondTeam, bidAmount);
+  const bidIndex = event.target.dataset.index;
+  placeNewBid(secondTeam, bidAmount, bidIndex);
 }
 
 async function openNewBid(matchId) {
@@ -41,6 +42,6 @@ async function openNewBid(matchId) {
   amount.value = "";
 }
 
-async function placeNewBid(secondTeam, bidAmount) {
-  await placeBid(secondTeam, bidAmount);
+async function placeNewBid(secondTeam, bidAmount, bidIndex) {
+  await placeBid(secondTeam, bidAmount, bidIndexF);
 }

@@ -28,7 +28,7 @@ let contractABI = fetch(ABI_JsonFilePath).then((response) =>
 log("ABI JSON DATA", await contractABI);
 
 // Create a new instance of the Web3 class
-const contractAddress = "0x3C89f48405582aE1FC3a413B732ab7C0c77DD4AD"; // Replace with the actual contract address
+const contractAddress = "0x6E57c5ee4E238061d78Ff95E7179aa454e80f9b4"; // Replace with the actual contract address
 log("CONTRACT ADDRESS", contractAddress);
 
 export let contract = new web3.eth.Contract(contractABI, contractAddress);
@@ -102,11 +102,11 @@ export async function openBid(matchId, bidder1Guess, bidAmount) {
 }
 
 // Function to place a bid
-export async function placeBid(secondTeam, bidAmount) {
+export async function placeBid(secondTeam, bidAmount, index) {
   try {
     log("FUNCTION CALL START", "placeBid");
     await contract.methods
-      .placeBid(secondTeam)
+      .placeBid(secondTeam, index)
       .send({ from: et_ActiveAccount, gas: 300000 });
 
     ethereum
@@ -128,14 +128,14 @@ export async function placeBid(secondTeam, bidAmount) {
   }
   log("FUNCTION CALL ENDED", "placeBid");
 
-  setTimeout(async () => {
-    log("FUNCTION CALL START", "relosveBid");
-    await contract.methods
-      .resolveBid()
-      .send({ from: et_ActiveAccount, gas: 300000 });
+  // setTimeout(async () => {
+  //   log("FUNCTION CALL START", "relosveBid");
+  //   await contract.methods
+  //     .resolveBid()
+  //     .send({ from: et_ActiveAccount, gas: 300000 });
 
-    log("FUNCTION CALL ENDED", "relosveBid");
-  }, 5000);
+  //   log("FUNCTION CALL ENDED", "relosveBid");
+  // }, 5000);
 }
 
 // Function to resolve a bid

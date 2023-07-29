@@ -38,7 +38,7 @@ async function displayOpenBid() {
   const dataContainer = document.getElementById("openbid-container");
   let html = "";
   await getAllBids().then((bids) => {
-    bids.forEach(async (bid) => {
+    bids.forEach(async (bid, index) => {
       console.log("display bid", bid.matchId);
       await getGameJson(bid.matchId).then((match) => {
         let secondTeam =
@@ -61,7 +61,7 @@ async function displayOpenBid() {
                 <h1>Bid Amount:  ${bid.bidAmount} ETC</h1>
                 </br>
                 <h2> Bet ${secondTeam} Win</h2>
-                <button id="placeBidBtn" class="btn btn-success" data-bid-amount="${bid.bidAmount}" data-second-team="${secondTeam}" data-match-id="${match.id}">Confirm bet</button>
+                <button id="placeBidBtn" class="btn btn-success" data-index="${index}" data-bid-amount="${bid.bidAmount}" data-second-team="${secondTeam}" data-match-id="${match.id}">Confirm bet</button>
             </div>
             <div class="image-container">
                 <img src="${match["awayTeam"].crest}" alt="תמונה 2" >
