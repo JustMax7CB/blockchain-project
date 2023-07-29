@@ -49,7 +49,7 @@ function displayData(data) {
             </br>
             <p>${match.utcDate}</p>
             <div class="form-inputs" id="match_id_${match.id}">
-                <input type="text" placeholder="הזינו סכום הימור כאן">
+                <input class="form-control" type="text" placeholder="הזינו סכום הימור כאן">
                 <select class="form-select">
                 <option value="${match["homeTeam"].shortName}">${match["homeTeam"].shortName}</option>
                 <option value="${match["awayTeam"].shortName}">${match["awayTeam"].shortName}</option>

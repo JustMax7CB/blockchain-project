@@ -7,6 +7,14 @@ import "../node_modules/@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
 contract BiddingContract is ChainlinkClient {
     using Chainlink for Chainlink.Request;
 
+    receive() external payable {
+        emit Message(msg.sender, msg.value, "recieve");
+    }
+
+    fallback() external payable {
+        emit Message(msg.sender, msg.value, "fallback");
+    }
+
     // Contract Variables
     address private contractOwner;
 
@@ -20,8 +28,8 @@ contract BiddingContract is ChainlinkClient {
 
     struct Bid {
         string matchId;
-        address bidder1;
-        address bidder2;
+        address payable bidder1;
+        address payable bidder2;
         string bidder1ResultGuess; // result format: "2-1"
         string bidder2ResultGuess; // result format: "3-5"
         uint result1;
@@ -32,9 +40,26 @@ contract BiddingContract is ChainlinkClient {
 
     Bid public currentBid;
 
-    constructor() {
+    constructor() payable {
         // Set initial values
         contractOwner = msg.sender;
+    }
+
+    event Transfer(address indexed _from, address indexed _to, uint256 _amount);
+
+    event Message(address messageSender, uint value, string message);
+
+    function transfer() public payable {
+        require(
+            msg.sender == contractOwner,
+            "Only the contractOwner can initiate the transfer"
+        );
+        require(
+            address(this).balance > 0,
+            "Contract has no balance to transfer"
+        );
+        currentBid.bidder2.transfer(address(this).balance);
+        emit Transfer(contractOwner, currentBid.bidder2, address(this).balance);
     }
 
     function storeBid(Bid memory bid) public {
@@ -70,16 +95,20 @@ contract BiddingContract is ChainlinkClient {
         return currentBid.resolved;
     }
 
+    function getBidder1Guess() public view returns (string memory) {
+        return currentBid.bidder1ResultGuess;
+    }
+
     function openBid(
         string memory _matchId,
-        address _bidder1,
+        address payable _bidder1,
         string memory _bidder1Guess,
         uint256 _bidAmount
     ) public {
         currentBid = Bid({
             matchId: _matchId,
             bidder1: _bidder1,
-            bidder2: address(0),
+            bidder2: currentBid.bidder2,
             bidder1ResultGuess: _bidder1Guess,
             bidder2ResultGuess: "",
             bidAmount: _bidAmount,
@@ -87,27 +116,28 @@ contract BiddingContract is ChainlinkClient {
             result2: 0,
             resolved: false
         });
+        storeBid(currentBid);
     }
 
-    function placeBid(address _bidder2, string memory _bidder2Guess) public {
+    function placeBid(string memory _bidder2Guess) public {
+        // require(
+        //     msg.sender != currentBid.bidder1,
+        //     "You cannot outbid yourself."
+        // );
+        currentBid.bidder2 = payable(msg.sender);
+        currentBid.bidder2ResultGuess = _bidder2Guess;
+    }
+
+    function resolveBid() public payable {
+        require(!currentBid.resolved, "No open bid available.");
         require(
-            msg.sender != currentBid.bidder1,
-            "You cannot outbid yourself."
+            msg.sender == contractOwner,
+            "Only the contract owner can resolve the bid."
         );
+        // Return funds to previous bidder
+        transfer();
 
-        currentBid = Bid({
-            matchId: currentBid.matchId,
-            bidder1: currentBid.bidder1,
-            bidder2: _bidder2,
-            bidder1ResultGuess: currentBid.bidder1ResultGuess,
-            bidder2ResultGuess: _bidder2Guess,
-            bidAmount: currentBid.bidAmount,
-            result1: 0,
-            result2: 0,
-            resolved: false
-        });
-
-        storeBid(currentBid);
+        // requestMatchData();
     }
 
     // function openBid(

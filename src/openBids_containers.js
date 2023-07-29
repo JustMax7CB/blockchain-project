@@ -1,23 +1,20 @@
 import { attachListeners } from "./script.js";
 import { getAllBids } from "./web3_script.js";
 
-let data;
 async function getGameJson(id) {
-  console.log("getGameJson","Start");
+  console.log("getGameJson", "Start");
 
-  const url =
-    `https://api.football-data.org/v4/matches/${id}`;
+  const url = `https://api.football-data.org/v4/matches/${id}`;
   try {
     return fetch(url, {
       method: "GET",
       headers: {
         "X-Auth-Token": "06504d7bb1f74cde9d03d39b54241a8c",
       },
-    }).then(async (temp) =>  {
+    }).then(async (temp) => {
       console.log(temp);
       return await paresJson(temp);
-    }
-    );
+    });
     //   console.log(response.json)
     // data =response.json();
     // console.log(data);
@@ -28,58 +25,54 @@ async function getGameJson(id) {
   // console.log(response)
 }
 async function paresJson(data) {
-  return await data.json().then(async (temp) => {
-    console.log("parseJson", temp)
-    return await temp;
+  return await data.json().then((temp) => {
+    console.log("parseJson", temp);
+    return temp;
   });
-  // console.log(temp);
 }
 
-
 async function displayOpenBid() {
-  /////CREATE new json file for all 
-  console.log("displayOpenBid","Start");
+  /////CREATE new json file for all
+  console.log("displayOpenBid", "Start");
 
   const dataContainer = document.getElementById("openbid-container");
   let html = "";
-  
-  let bids_list = await getAllBids().then( bids => { 
-    return bids;
-  });
-  bids_list.forEach(async bid => {
-    console.log("display bid",bid.matchId);
-    let match=await getGameJson(bid.matchId).then(match=>{
-      console.log("getMatchDetails", match)
-      document.createElement("div");
-      html += `<div class="rectangle">
-          <div class="image-container">
-              <img src="${match["homeTeam"].crest}" alt="תמונה 1" >
-          </div>
-          <div class="form-div">
-              <h2>${match["homeTeam"].shortName} vs ${match["awayTeam"].shortName}</h2>
-              <p>${match.competition.name}</p>
-              <p>ID:Game ID:  ${match.id}</p>
-              <p>${match.utcDate}</p>
-              <p>Bidder ID:  ${bid.bidder1}</p>
-              <h1 >Bid Owner Guss:  ${bid.bidder1ResultGuess}-Win</h1>
-              <h1>Bid Amount:  ${bid.bidAmount} ETC</h1>
-              </br>
-              <h2> Bet ${bid.bidder1ResultGuess} Lose</h2>
-              <button id="openBidBtn" class="btn btn-success" onclick="f()">Confirm bet</button>
-          </div>
-          <div class="image-container">
-              <img src="${match["awayTeam"].crest}" alt="תמונה 2" >
-          </div>
-          
-      </div>`;
+  await getAllBids().then((bids) => {
+    bids.forEach(async (bid) => {
+      console.log("display bid", bid.matchId);
+      await getGameJson(bid.matchId).then((match) => {
+        let secondTeam =
+          bid.bidder1ResultGuess === match["homeTeam"].shortName
+            ? match["awayTeam"].shortName
+            : match["homeTeam"].shortName;
+        console.log("getMatchDetails", match);
+        document.createElement("div");
+        html += `<div class="rectangle">
+            <div class="image-container">
+                <img src="${match["homeTeam"].crest}" alt="תמונה 1" >
+            </div>
+            <div class="form-div">
+                <h2>${match["homeTeam"].shortName} vs ${match["awayTeam"].shortName}</h2>
+                <p>${match.competition.name}</p>
+                <p>ID:Game ID:  ${match.id}</p>
+                <p>${match.utcDate}</p>
+                <p>Bidder ID:  ${bid.bidder1}</p>
+                <h1 >Bid Owner Guss:  ${bid.bidder1ResultGuess}-Win</h1>
+                <h1>Bid Amount:  ${bid.bidAmount} ETC</h1>
+                </br>
+                <h2> Bet ${secondTeam} Win</h2>
+                <button id="placeBidBtn" class="btn btn-success" data-bid-amount="${bid.bidAmount}" data-second-team="${secondTeam}" data-match-id="${match.id}">Confirm bet</button>
+            </div>
+            <div class="image-container">
+                <img src="${match["awayTeam"].crest}" alt="תמונה 2" >
+            </div>
+            
+        </div>`;
+      });
       dataContainer.innerHTML = html;
+      attachListeners();
     });
-    
-   
-});
-  
-  
-
+  });
 
   // data.forEach((match) => {
   //   document.createElement("div");
@@ -106,7 +99,7 @@ async function displayOpenBid() {
   //       <div class="image-container">
   //           <img src="${match["awayTeam"].crest}" alt="תמונה 2" >
   //       </div>
-        
+
   //   </div>`;
   // });
 

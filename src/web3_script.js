@@ -28,7 +28,7 @@ let contractABI = fetch(ABI_JsonFilePath).then((response) =>
 log("ABI JSON DATA", await contractABI);
 
 // Create a new instance of the Web3 class
-const contractAddress = "0x8799e1F05912fc59c500BB2ab49dD383541fBfbE"; // Replace with the actual contract address
+const contractAddress = "0x3C89f48405582aE1FC3a413B732ab7C0c77DD4AD"; // Replace with the actual contract address
 log("CONTRACT ADDRESS", contractAddress);
 
 export let contract = new web3.eth.Contract(contractABI, contractAddress);
@@ -41,6 +41,29 @@ export async function resolvedBid() {
   } catch (error) {
     console.error("Resolved BID Error", error);
   }
+}
+
+function findClosestWeiToEther(targetEtherAmount) {
+  let low = 0;
+  let high = Number.MAX_SAFE_INTEGER;
+  let closestWei = null;
+
+  while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    const midEtherAmount = web3.utils.fromWei(mid.toString(), "ether");
+
+    if (midEtherAmount === targetEtherAmount) {
+      closestWei = mid.toString();
+      break;
+    } else if (midEtherAmount < targetEtherAmount) {
+      low = mid + 1;
+      closestWei = mid.toString();
+    } else {
+      high = mid - 1;
+    }
+  }
+
+  return closestWei;
 }
 
 // Create a contract instance using the ABI and contract address
@@ -58,6 +81,19 @@ export async function openBid(matchId, bidder1Guess, bidAmount) {
       .send({ from: et_ActiveAccount, gas: 300000 });
 
     log("openBid", "Bid opened successfully.");
+
+    ethereum
+      .request({
+        method: "eth_sendTransaction",
+        params: [
+          {
+            from: et_ActiveAccount,
+            to: contractAddress,
+            value: findClosestWeiToEther(bidAmount),
+          },
+        ],
+      })
+      .then((txHash) => log("txHash", txHash));
   } catch (error) {
     console.error("Error opening bid:", error);
   }
@@ -66,27 +102,60 @@ export async function openBid(matchId, bidder1Guess, bidAmount) {
 }
 
 // Function to place a bid
-export async function placeBid(bidder2, bidder2Guess) {
+export async function placeBid(secondTeam, bidAmount) {
   try {
     log("FUNCTION CALL START", "placeBid");
     await contract.methods
-      .placeBid(bidder2, bidder2Guess)
-      .send({ from: et_ActiveAccount, gas: 300000, value: bidAmount });
+      .placeBid(secondTeam)
+      .send({ from: et_ActiveAccount, gas: 300000 });
+
+    ethereum
+      .request({
+        method: "eth_sendTransaction",
+        params: [
+          {
+            from: et_ActiveAccount,
+            to: contractAddress,
+            value: findClosestWeiToEther(bidAmount),
+          },
+        ],
+      })
+      .then((txHash) => log("txHash", txHash));
 
     log("placeBid", "Bid placed successfully.");
   } catch (error) {
     console.error("Error placing bid:", error);
   }
   log("FUNCTION CALL ENDED", "placeBid");
+
+  setTimeout(async () => {
+    log("FUNCTION CALL START", "relosveBid");
+    await contract.methods
+      .resolveBid()
+      .send({ from: et_ActiveAccount, gas: 300000 });
+
+    log("FUNCTION CALL ENDED", "relosveBid");
+  }, 5000);
 }
 
 // Function to resolve a bid
 export async function resolveBid() {
   try {
     log("FUNCTION CALL START", "resolveBid");
-    await contract.methods
-      .resolveBid()
-      .send({ from: et_ActiveAccount, gas: 300000 });
+
+    const gas = await contract.methods
+      .transfer()
+      .estimateGas({ from: et_ActiveAccount });
+    const result = await contract.methods
+      .transfer()
+      .send({ from: et_ActiveAccount, gas });
+    // await contract.methods
+    //   .resolveBid()
+    //   .send({ from: et_ActiveAccount, gas: 300000 });
+    console.log(
+      "Transaction successful. Transaction hash:",
+      result.transactionHash
+    );
     console.log("Bid resolved successfully.");
   } catch (error) {
     console.error("Error resolving bid:", error);
