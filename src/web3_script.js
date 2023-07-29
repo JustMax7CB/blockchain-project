@@ -6,6 +6,8 @@ const showChainId = document.querySelector(".showChainId");
 // Initialise the active account and chain id
 let activeAccount;
 let activeChainId;
+let et_ActiveAccount;
+let accountBalance;
 
 // Contract ABI (Application Binary Interface) obtained from compiling the Solidity file
 const ABI_JsonFilePath = "../build/contracts/BiddingContract.json";
@@ -14,6 +16,7 @@ const ABI_JsonFilePath = "../build/contracts/BiddingContract.json";
 const providerUrl = "http://127.0.0.1:7545"; // Replace with your actual Ethereum provider URL
 
 const web3 = new Web3(providerUrl);
+
 log("Web3 Instance", web3.currentProvider);
 
 let contractOwner = null;
@@ -25,7 +28,7 @@ let contractABI = fetch(ABI_JsonFilePath).then((response) =>
 log("ABI JSON DATA", await contractABI);
 
 // Create a new instance of the Web3 class
-const contractAddress = "0x59176d880d04395625A48504DB6E841684DBd3aD"; // Replace with the actual contract address
+const contractAddress = "0x1Fb15Eeb7D71CeCCebD8A454028D85Cab93eD202"; // Replace with the actual contract address
 log("CONTRACT ADDRESS", contractAddress);
 
 export let contract = new web3.eth.Contract(contractABI, contractAddress);
@@ -43,60 +46,91 @@ export async function resolvedBid() {
 // Create a contract instance using the ABI and contract address
 // Function to open a bid
 export async function openBid(
-  team1,
-  team2,
+  matchId,
   bidder2,
   bidder1ResultGuess,
   bidder2ResultGuess,
   bidAmount
 ) {
   try {
-    await getAccount();
-    await getChainId();
+    await window.ethereum.on("accountsChanged", function (accounts) {
+      activeAccount = et_ActiveAccount;
+      console.log(activeAccount);
+    });
 
-    log("FUNCTION CALL", "openBid");
+    log("FUNCTION CALL START", "openBid");
+
     await contract.methods
       .openBid(
-        team1,
-        team2,
+        matchId,
         bidder2,
         bidder1ResultGuess,
         bidder2ResultGuess,
         bidAmount
       )
-      .send({
-        from: activeAccount,
-        gas: "100000",
-      });
+      .send({ from: et_ActiveAccount, gas: 300000 });
     console.log("Bid opened successfully.");
   } catch (error) {
     console.error("Error opening bid:", error);
   }
+  log("FUNCTION CALL ENDED", "openBid");
 }
 
 // Function to place a bid
-export async function placeBid() {
+export async function placeBid(bidAmount) {
   try {
-    log("FUNCTION CALL", "placeBid");
-    const accounts = await web3.eth.getAccounts();
-    const bidder = accounts[0]; // Assuming the bidder is the first account
-    await contract.methods.placeBid().send({ from: bidder });
+    log("FUNCTION CALL START", "placeBid");
+    await contract.methods
+      .placeBid()
+      .send({ from: et_ActiveAccount, gas: 300000, value: bidAmount });
+
     console.log("Bid placed successfully.");
+    log("All Bids", await getAllBids());
   } catch (error) {
     console.error("Error placing bid:", error);
   }
+  log("FUNCTION CALL ENDED", "placeBid");
 }
 
 // Function to resolve a bid
 export async function resolveBid() {
   try {
-    await getAccount();
-    getChainId();
-    log("FUNCTION CALL", "resolveBid");
-    await contract.methods.resolveBid().send({ from: activeAccount });
+    log("FUNCTION CALL START", "resolveBid");
+    await contract.methods
+      .resolveBid()
+      .send({ from: et_ActiveAccount, gas: 300000 });
     console.log("Bid resolved successfully.");
   } catch (error) {
     console.error("Error resolving bid:", error);
+  }
+  log("FUNCTION CALL ENDED", "resolveBid");
+}
+
+export async function getAllBids() {
+  try {
+    log("FUNCTION CALL START", "getAllBids");
+    const numberOfBids = await contract.methods.getNumberOfBids().call();
+    const allBids = [];
+
+    for (let i = 0; i < numberOfBids; i++) {
+      const bid = await contract.methods.getBid(i).call();
+      allBids.push({
+        matchId: bid.matchId,
+        bidder1: bid.bidder1,
+        bidder2: bid.bidder2,
+        bidder1ResultGuess: bid.bidder1ResultGuess,
+        bidder2ResultGuess: bid.bidder2ResultGuess,
+        result1: bid.result1,
+        result2: bid.result2,
+        bidAmount: bid.bidAmount,
+        resolved: bid.resolved,
+      });
+    }
+    return allBids;
+  } catch (error) {
+    console.error("getAllBids finished with error: ", error);
+    log("FUNCTION CALL ENDED", "getAllBids");
+    return null;
   }
 }
 
@@ -106,9 +140,14 @@ function connectToMetaMask() {
     log("METAMASK", "MetaMast is installed!");
   }
   if (ethereum) {
-    ethereum.request({ method: "eth_requestAccounts" }).then((address) => {
-      log("ETHEREUM ACCOUNT", "Account Connected" + address[0]);
-    });
+    ethereum
+      .request({ method: "eth_requestAccounts" })
+      .then(async (address) => {
+        log("ETHEREUM ACCOUNT", "Account Connected: " + address[0]);
+        et_ActiveAccount = address[0];
+        accountBalance = await web3.eth.getBalance(et_ActiveAccount);
+        log("ETHEREUM ACCOUNT", "Account Balance: " + accountBalance);
+      });
   }
 }
 
@@ -119,6 +158,7 @@ async function main() {
   console.log("Connected to Ethereum provider.");
 
   connectToMetaMask();
+  log("All Bids", await getAllBids());
 }
 
 main().catch(console.error);
@@ -129,15 +169,17 @@ export function log(tag, message) {
 
 // Get the account in the window object
 async function getAccount() {
-  const accounts = await web3.eth.getAccounts();
-  if (accounts.length === 0) {
-    // MetaMask is locked or the user has not connected any accounts
-    console.log("Please connect to MetaMask.");
-  } else if (accounts[0] !== activeAccount) {
-    activeAccount = accounts[0];
+  if (window.ethereum) {
+    await ethereum.enable();
   }
-  showAccount.innerHTML = activeAccount;
-  log("Second Bidder Address: ", activeAccount);
+
+  web3.eth.getAccounts((error, result) => {
+    if (error) {
+      log("getAccount ERROR", error);
+    } else {
+      log("getAccount RESULT", result[0]);
+    }
+  });
 }
 
 // Get the connected network chainId
@@ -149,3 +191,17 @@ async function getChainId() {
 // Update the selected account and chain id on change
 ethereum.on("accountsChanged", getAccount);
 ethereum.on("chainChanged", getChainId);
+
+// var request = require('request');
+// var options = {
+//   'method': 'GET',
+//   'url': 'https://v3.football.api-sports.io/{endpoint}',
+//   'headers': {
+//     'x-rapidapi-key': 'XxXxXxXxXxXxXxXxXxXxXxXx',
+//     'x-rapidapi-host': 'v3.football.api-sports.io'
+//   }
+// };
+// request(options, function (error, response) {
+//   if (error) throw new Error(error);
+//   console.log(response.body);
+// });

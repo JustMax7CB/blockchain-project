@@ -1,4 +1,4 @@
-
+// SPDX-License-Identifier: MIT
 pragma solidity >=0.6.6 <0.9.0;
 pragma experimental ABIEncoderV2;
 
@@ -14,10 +14,12 @@ contract BiddingContract is ChainlinkClient {
     address private oracle;
     bytes32 private jobId;
     uint256 private fee;
+    uint256 arrayIndex = 0;
+
+    Bid[] public bids;
 
     struct Bid {
-        string team1;
-        string team2;
+        string matchId;
         address bidder1;
         address bidder2;
         string bidder1ResultGuess; // result format: "2-1"
@@ -35,6 +37,27 @@ contract BiddingContract is ChainlinkClient {
         contractOwner = msg.sender;
     }
 
+    function storeBid(Bid memory bid) public {
+        bids.push(bid);
+        arrayIndex = bids.length; // Update the arrayIndex whenever a new bid is added
+    }
+
+    function getBid(uint256 index) public view returns (Bid memory) {
+        return bids[index];
+    }
+
+    function getNumberOfBids() public view returns (uint256) {
+        return arrayIndex;
+    }
+
+    function getAllBids() public view returns (Bid[] memory) {
+        Bid[] memory result = new Bid[](arrayIndex);
+        for (uint256 i = 0; i < arrayIndex; i++) {
+            result[i] = bids[i];
+        }
+        return result;
+    }
+
     function getContractOwner() public view returns (address) {
         return contractOwner;
     }
@@ -48,19 +71,17 @@ contract BiddingContract is ChainlinkClient {
     }
 
     function openBid(
-        string memory _team1,
-        string memory _team2,
+        string memory _matchId,
         address _bidder2,
         string memory _bidder1ResultGuess, // result format: "2-1"
         string memory _bidder2ResultGuess, // result format: "3-5"
         uint256 _bidAmount
-    ) public payable{
+    ) public {
         // require(currentBid.resolved, "A bid is already open.");
         require(_bidder2 != address(0), "Invalid bidder address.");
 
         currentBid = Bid({
-            team1: _team1,
-            team2: _team2,
+            matchId: _matchId,
             bidder1: msg.sender,
             bidder2: _bidder2,
             bidder1ResultGuess: _bidder1ResultGuess,
@@ -72,16 +93,14 @@ contract BiddingContract is ChainlinkClient {
         });
     }
 
-    function placeBid() public {
-        // require(
-        //     msg.sender != currentBid.bidder1,
-        //     "You cannot outbid yourself."
-        // );
-
+    function placeBid() public payable {
+        require(!currentBid.resolved, "No open bid available.");
+        require(
+            msg.sender != currentBid.bidder2,
+            "You cannot outbid yourself."
+        );
         
-
-        // Update bidder
-        currentBid.bidder2 = msg.sender;
+        storeBid(currentBid);
     }
 
     function resolveBid() public payable {
@@ -92,23 +111,24 @@ contract BiddingContract is ChainlinkClient {
         );
         // Return funds to previous bidder
         payable(currentBid.bidder2).transfer(currentBid.bidAmount);
-
+  
         // requestMatchData();
     }
 
+
     // function requestMatchData() private {
     //     currentBid.resolved = true;
-        // Chainlink.Request memory request = buildChainlinkRequest(
-        //     jobId,
-        //     address(this),
-        //     this.handleMatchData.selector
-        // );
-        // request.add("get", "https://api.football-data.org/v4/matches"); // Set the Football-Data.org API endpoint for retrieving match data
-        // request.add(
-        //     "headers",
-        //     "X-Auth-Token: 8b752b2a04694a799db1fdf1b9bca649"
-        // ); // Set the actual auth token
-        // sendChainlinkRequestTo(oracle, request, fee);
+    // Chainlink.Request memory request = buildChainlinkRequest(
+    //     jobId,
+    //     address(this),
+    //     this.handleMatchData.selector
+    // );
+    // request.add("get", "https://api.football-data.org/v4/matches"); // Set the Football-Data.org API endpoint for retrieving match data
+    // request.add(
+    //     "headers",
+    //     "X-Auth-Token: 8b752b2a04694a799db1fdf1b9bca649"
+    // ); // Set the actual auth token
+    // sendChainlinkRequestTo(oracle, request, fee);
     // }
 
     // function handleMatchData(
