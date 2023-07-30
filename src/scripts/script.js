@@ -22,26 +22,28 @@ export function attachListeners() {
 
 function handleOpenButtonClick(event) {
   const matchId = event.target.dataset.matchId;
-  openNewBid(matchId);
+  const matchWinner = event.target.dataset.matchWinner;
+  const matchResult = event.target.dataset.matchResult;
+  openNewBid(matchId, matchWinner, matchResult);
 }
 
 function handlePlaceButtonClick(event) {
-  const secondTeam = event.target.dataset.secondTeam;
   const bidAmount = event.target.dataset.bidAmount;
   const bidIndex = event.target.dataset.index;
-  placeNewBid(secondTeam, bidAmount, bidIndex);
+  placeNewBid(bidAmount, bidIndex);
 }
 
-async function openNewBid(matchId) {
+async function openNewBid(matchId, matchWinner, matchResult) {
   const amount = document.querySelector(`#match_id_${matchId} > input`).value;
   const firstGuess = document.querySelector(
     `#match_id_${matchId} > select`
   ).value;
+  let firstIsWinner = false;
   log("openBid", `Amount: ${amount}, First guess: ${firstGuess}`);
-  await openBid(matchId, firstGuess, amount);
-  amount.value = "";
+  if (firstGuess === matchWinner) firstIsWinner = true;
+  await openBid(matchId, firstGuess, amount, firstIsWinner, matchResult);
 }
 
-async function placeNewBid(secondTeam, bidAmount, bidIndex) {
-  await placeBid(secondTeam, bidAmount, bidIndexF);
+async function placeNewBid(bidAmount, bidIndex) {
+  await placeBid(bidAmount, bidIndex);
 }

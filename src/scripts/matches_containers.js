@@ -36,6 +36,7 @@ function displayData(data) {
   let html = "";
 
   data.forEach((match) => {
+    const matchResult = `${match["score"].fullTime.home}- ${match["score"].fullTime.away}`;
     document.createElement("div");
     html += `<div class="rectangle">
         <div class="image-container">
@@ -54,7 +55,7 @@ function displayData(data) {
                 <option value="HOME_TEAM">${match["homeTeam"].shortName}</option>
                 <option value="AWAY_TEAM">${match["awayTeam"].shortName}</option>
                 </select>
-                <button id="openBidBtn" class="btn btn-success" data-match-id="${match.id}">Open Bid</button>
+                <button id="openBidBtn" class="btn btn-success" data-match-result="${matchResult}" data-match-winner=${match["score"].winner} data-match-id="${match.id}">Open Bid</button>
             </div>
         </div>
         <div class="image-container">

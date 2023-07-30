@@ -33,8 +33,8 @@ contract BiddingContract is ChainlinkClient {
         address payable bidder2;
         string bidder1ResultGuess; // result format: "2-1"
         string bidder2ResultGuess; // result format: "3-5"
-        uint result1;
-        uint result2;
+        uint8 result1;
+        uint8 result2;
         uint256 bidAmount;
         bool isBidder1Won;
     }
@@ -104,7 +104,10 @@ contract BiddingContract is ChainlinkClient {
         string memory _matchId,
         address payable _bidder1,
         string memory _bidder1Guess,
-        uint256 _bidAmount
+        uint256 _bidAmount,
+        bool firstIsWinner,
+        uint8 resultHome,
+        uint8 resultAway
     ) public {
         currentBid = Bid({
             index: arrayIndex++,
@@ -114,20 +117,24 @@ contract BiddingContract is ChainlinkClient {
             bidder1ResultGuess: _bidder1Guess,
             bidder2ResultGuess: "",
             bidAmount: _bidAmount,
-            result1: 0,
-            result2: 0,
-            isBidder1Won: false
+            result1: resultHome,
+            result2: resultAway,
+            isBidder1Won: firstIsWinner
         });
         storeBid(currentBid);
     }
 
-    function placeBid(string memory _bidder2Guess, uint256 index) public {
+    function placeBid(uint256 index) public {
         // require(
         //     msg.sender != currentBid.bidder1,
         //     "You cannot outbid yourself."
         // );
         currentBid.bidder2 = payable(msg.sender);
-        currentBid.bidder2ResultGuess = _bidder2Guess;
+        currentBid.bidder2ResultGuess = keccak256(
+            bytes(currentBid.bidder1ResultGuess)
+        ) == keccak256(bytes("HOME_TEAM"))
+            ? "AWAY_TEAM"
+            : "HOME_TEAM";
         setBidder2InArray(payable(msg.sender), index);
     }
 

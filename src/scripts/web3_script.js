@@ -10,7 +10,7 @@ let et_ActiveAccount;
 let accountBalance;
 
 // Contract ABI (Application Binary Interface) obtained from compiling the Solidity file
-const ABI_JsonFilePath = "../build/contracts/BiddingContract.json";
+const ABI_JsonFilePath = "../../build/contracts/BiddingContract.json";
 
 // Ethereum provider URL
 const providerUrl = "http://127.0.0.1:7545"; // Replace with your actual Ethereum provider URL
@@ -28,7 +28,7 @@ let contractABI = fetch(ABI_JsonFilePath).then((response) =>
 log("ABI JSON DATA", await contractABI);
 
 // Create a new instance of the Web3 class
-const contractAddress = "0x6E57c5ee4E238061d78Ff95E7179aa454e80f9b4"; // Replace with the actual contract address
+const contractAddress = "0x35d7A2065Bcc7211421d12CFe7e440C76b47ff89"; // Replace with the actual contract address
 log("CONTRACT ADDRESS", contractAddress);
 
 export let contract = new web3.eth.Contract(contractABI, contractAddress);
@@ -69,16 +69,32 @@ function findClosestWeiToEther(targetEtherAmount) {
 // Create a contract instance using the ABI and contract address
 // Function to open a bid
 
-export async function openBid(matchId, bidder1Guess, bidAmount) {
+export async function openBid(
+  matchId,
+  bidder1Guess,
+  bidAmount,
+  firstIsWinner,
+  matchResult
+) {
   try {
     await window.ethereum.on("accountsChanged", function (accounts) {
       activeAccount = et_ActiveAccount;
       console.log(activeAccount);
     });
     log("FUNCTION CALL START", "openBid");
+    const results = matchResult.split("-");
+
     await contract.methods
-      .openBid(matchId, et_ActiveAccount, bidder1Guess, bidAmount)
-      .send({ from: et_ActiveAccount, gas: 300000 });
+      .openBid(
+        matchId,
+        et_ActiveAccount,
+        bidder1Guess,
+        bidAmount,
+        firstIsWinner,
+        parseInt(results[0]),
+        parseInt(results[1])
+      )
+      .send({ from: et_ActiveAccount, gas: 1000000 });
 
     log("openBid", "Bid opened successfully.");
 
@@ -102,11 +118,11 @@ export async function openBid(matchId, bidder1Guess, bidAmount) {
 }
 
 // Function to place a bid
-export async function placeBid(secondTeam, bidAmount, index) {
+export async function placeBid(bidAmount, index) {
   try {
     log("FUNCTION CALL START", "placeBid");
     await contract.methods
-      .placeBid(secondTeam, index)
+      .placeBid(index)
       .send({ from: et_ActiveAccount, gas: 300000 });
 
     ethereum

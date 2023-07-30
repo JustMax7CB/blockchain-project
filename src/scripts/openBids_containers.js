@@ -61,7 +61,7 @@ async function displayOpenBid() {
                 <h1>Bid Amount:  ${bid.bidAmount} ETC</h1>
                 </br>
                 <h2> Bet ${secondTeam} Win</h2>
-                <button id="placeBidBtn" class="btn btn-success" data-index="${index}" data-bid-amount="${bid.bidAmount}" data-second-team="${secondTeam}" data-match-id="${match.id}">Confirm bet</button>
+                <button id="placeBidBtn" class="btn btn-success" data-index="${index}" data-bid-amount="${bid.bidAmount}" data-match-id="${match.id}">Confirm bet</button>
             </div>
             <div class="image-container">
                 <img src="${match["awayTeam"].crest}" alt="תמונה 2" >
