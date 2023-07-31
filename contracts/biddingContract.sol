@@ -37,6 +37,7 @@ contract BiddingContract is ChainlinkClient {
         uint8 result2;
         uint256 bidAmount;
         bool isBidder1Won;
+        bool resolved;
     }
 
     Bid public currentBid;
@@ -50,22 +51,31 @@ contract BiddingContract is ChainlinkClient {
 
     event Message(address messageSender, uint value, string message);
 
-    function transfer() public payable {
-        require(
-            msg.sender == contractOwner,
-            "Only the contractOwner can initiate the transfer"
-        );
-        require(
-            address(this).balance > 0,
-            "Contract has no balance to transfer"
-        );
-        currentBid.bidder2.transfer(address(this).balance);
-        emit Transfer(contractOwner, currentBid.bidder2, address(this).balance);
-    }
-
     function storeBid(Bid memory bid) public {
         bids.push(bid);
         arrayIndex = bids.length; // Update the arrayIndex whenever a new bid is added
+    }
+
+    function removeBid(uint256 index) public {
+        delete bids[index];
+        arrayIndex = bids.length; // Update the arrayIndex whenever a new bid is added
+        clearCurrentBid(arrayIndex);
+    }
+
+    function clearCurrentBid(uint256 _index) public {
+        currentBid = Bid({
+            index: _index,
+            matchId: "",
+            bidder1: payable(address(0)),
+            bidder2: payable(address(0)),
+            bidder1ResultGuess: "",
+            bidder2ResultGuess: "",
+            bidAmount: 0,
+            result1: 0,
+            result2: 0,
+            isBidder1Won: false,
+            resolved: false
+        });
     }
 
     function getBid(uint256 index) public view returns (Bid memory) {
@@ -100,6 +110,10 @@ contract BiddingContract is ChainlinkClient {
         return currentBid.bidder1ResultGuess;
     }
 
+    function getContractBalance() public view returns (uint) {
+        return address(this).balance;
+    }
+
     function openBid(
         string memory _matchId,
         address payable _bidder1,
@@ -119,9 +133,15 @@ contract BiddingContract is ChainlinkClient {
             bidAmount: _bidAmount,
             result1: resultHome,
             result2: resultAway,
-            isBidder1Won: firstIsWinner
+            isBidder1Won: firstIsWinner,
+            resolved: false
         });
         storeBid(currentBid);
+        emit Message(
+            _bidder1,
+            _bidAmount,
+            "The Bid has been opened and stored"
+        );
     }
 
     function placeBid(uint256 index) public {
@@ -135,7 +155,12 @@ contract BiddingContract is ChainlinkClient {
         ) == keccak256(bytes("HOME_TEAM"))
             ? "AWAY_TEAM"
             : "HOME_TEAM";
-        setBidder2InArray(payable(msg.sender), index);
+        setBidder2InArray(currentBid.bidder2, index);
+        emit Message(
+            currentBid.bidder2,
+            currentBid.bidAmount,
+            "The Bid has been placed"
+        );
     }
 
     function setBidder2InArray(address payable bidder2, uint256 index) public {
@@ -143,88 +168,40 @@ contract BiddingContract is ChainlinkClient {
     }
 
     function resolveBid() public payable {
-        require(
-            msg.sender == contractOwner,
-            "Only the contract owner can resolve the bid."
-        );
-        // Return funds to previous bidder
-        transfer();
+        // require(msg.sender == contractOwner, "Only the contractOwner can resolve the bid");
+        require(!currentBid.resolved, "This Bid has already been resolved");
 
-        // requestMatchData();
+        if (currentBid.isBidder1Won) {
+            emit Message(
+                currentBid.bidder1,
+                0,
+                "Bidder1 - Before the payment call"
+            );
+            (bool success, ) = payable(currentBid.bidder1).call{
+                value: getContractBalance()
+            }("");
+            require(success, "ResolveBid failed");
+            emit Transfer(
+                address(this),
+                currentBid.bidder1,
+                currentBid.bidAmount
+            );
+        } else {
+            emit Message(
+                currentBid.bidder2,
+                0,
+                "Bidder2 - Before the payment call"
+            );
+            (bool success, ) = payable(currentBid.bidder2).call{
+                value: getContractBalance()
+            }("");
+            require(success, "ResolveBid failed");
+            emit Transfer(
+                address(this),
+                currentBid.bidder2,
+                currentBid.bidAmount
+            );
+        }
+        removeBid(currentBid.index);
     }
-
-    // function openBid(
-    //     string memory _matchId,
-    //     address _bidder2,
-    //     string memory _bidder1ResultGuess, // result format: "2-1"
-    //     string memory _bidder2ResultGuess, // result format: "3-5"
-    //     uint256 _bidAmount
-    // ) public {
-    //     // require(currentBid.resolved, "A bid is already open.");
-    //     require(_bidder2 != address(0), "Invalid bidder address.");
-
-    //     currentBid = Bid({
-    //         matchId: _matchId,
-    //         bidder1: msg.sender,
-    //         bidder2: _bidder2,
-    //         bidder1ResultGuess: _bidder1ResultGuess,
-    //         bidder2ResultGuess: _bidder2ResultGuess,
-    //         result1: 0,
-    //         result2: 0,
-    //         bidAmount: _bidAmount,
-    //         resolved: false
-    //     });
-    // }
-
-    // function placeBid() public payable {
-    //     require(!currentBid.resolved, "No open bid available.");
-    //     require(
-    //         msg.sender != currentBid.bidder2,
-    //         "You cannot outbid yourself."
-    //     );
-
-    //     storeBid(currentBid);
-    // }
-
-    // function resolveBid() public payable {
-    //     require(!currentBid.resolved, "No open bid available.");
-    //     require(
-    //         msg.sender == contractOwner,
-    //         "Only the contract owner can resolve the bid."
-    //     );
-    //     // Return funds to previous bidder
-    //     payable(currentBid.bidder2).transfer(currentBid.bidAmount);
-
-    //     // requestMatchData();
-    // }
-
-    // function requestMatchData() private {
-    //     currentBid.resolved = true;
-    // Chainlink.Request memory request = buildChainlinkRequest(
-    //     jobId,
-    //     address(this),
-    //     this.handleMatchData.selector
-    // );
-    // request.add("get", "https://api.football-data.org/v4/matches"); // Set the Football-Data.org API endpoint for retrieving match data
-    // request.add(
-    //     "headers",
-    //     "X-Auth-Token: 8b752b2a04694a799db1fdf1b9bca649"
-    // ); // Set the actual auth token
-    // sendChainlinkRequestTo(oracle, request, fee);
-    // }
-
-    // function handleMatchData(
-    //     bytes32 _requestId,
-    //     uint256 _result
-    // ) public recordChainlinkFulfillment(_requestId) {
-    //     // Process the match data received from the API
-    //     // Update the bid results based on the fetched data
-
-    //     // For example:
-    //     currentBid.result1 = 2; // Update result for team 1;
-    //     currentBid.result2 = 2; // Update result for team 2;
-
-    //     // Mark the bid as resolved
-    //     currentBid.resolved = true;
-    // }
 }

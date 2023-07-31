@@ -28,7 +28,7 @@ let contractABI = fetch(ABI_JsonFilePath).then((response) =>
 log("ABI JSON DATA", await contractABI);
 
 // Create a new instance of the Web3 class
-const contractAddress = "0x35d7A2065Bcc7211421d12CFe7e440C76b47ff89"; // Replace with the actual contract address
+const contractAddress = "0x483d937456D71b3FA8F472c3A9Ce773004557a4C"; // Replace with the actual contract address
 log("CONTRACT ADDRESS", contractAddress);
 
 export let contract = new web3.eth.Contract(contractABI, contractAddress);
@@ -36,7 +36,7 @@ log("Contract Instance", contract);
 
 export async function resolvedBid() {
   try {
-    contract.methods.resolvedBid();
+    await contract.methods.resolvedBid().send({ from: et_ActiveAccount, gas: 1000000 });
     log("Resolved BID", contract.methods.getResolvedStatus());
   } catch (error) {
     console.error("Resolved BID Error", error);
@@ -95,7 +95,6 @@ export async function openBid(
         parseInt(results[1])
       )
       .send({ from: et_ActiveAccount, gas: 1000000 });
-
     log("openBid", "Bid opened successfully.");
 
     ethereum
@@ -124,6 +123,7 @@ export async function placeBid(bidAmount, index) {
     await contract.methods
       .placeBid(index)
       .send({ from: et_ActiveAccount, gas: 300000 });
+    
 
     ethereum
       .request({
@@ -137,21 +137,21 @@ export async function placeBid(bidAmount, index) {
         ],
       })
       .then((txHash) => log("txHash", txHash));
+      log("placeBid", "Bid placed successfully.");
 
-    log("placeBid", "Bid placed successfully.");
+    await contract.methods
+      .resolveBid()
+      .send({ from: et_ActiveAccount, gas: 300000 });
   } catch (error) {
     console.error("Error placing bid:", error);
   }
   log("FUNCTION CALL ENDED", "placeBid");
 
-  // setTimeout(async () => {
-  //   log("FUNCTION CALL START", "relosveBid");
-  //   await contract.methods
-  //     .resolveBid()
-  //     .send({ from: et_ActiveAccount, gas: 300000 });
 
-  //   log("FUNCTION CALL ENDED", "relosveBid");
-  // }, 5000);
+
+  setTimeout(async () => {
+    await resolveBid()
+  }, 20000)
 }
 
 // Function to resolve a bid
@@ -160,14 +160,11 @@ export async function resolveBid() {
     log("FUNCTION CALL START", "resolveBid");
 
     const gas = await contract.methods
-      .transfer()
-      .estimateGas({ from: et_ActiveAccount });
+      .resolveBid()
+      .estimateGas({ from: contractAddress });
     const result = await contract.methods
-      .transfer()
-      .send({ from: et_ActiveAccount, gas });
-    // await contract.methods
-    //   .resolveBid()
-    //   .send({ from: et_ActiveAccount, gas: 300000 });
+      .resolveBid()
+      .send({ from: contractAddress, gas });
     console.log(
       "Transaction successful. Transaction hash:",
       result.transactionHash
